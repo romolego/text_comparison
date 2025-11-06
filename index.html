@@ -11,11 +11,12 @@
 <script src="./jszip.min.js"></script>
 <script src="./pdf.min.js"></script>
 <script src="./pdf.worker.min.js"></script>
+<script src="./diff-match-patch.js"></script> <!-- Новая библиотека -->
 
 <style>
 :root{
   --bg:#fff; --fg:#111; --muted:#666; --accent:#0a67ff;
-  --ins-bg:#d8ffd8; --del-bg:#fff2a8;
+  --ins-bg:#d8ffd8; --del-bg:#ffd8d8;
   --border:#ccc; --left-border:#ffd54d; --right-border:#57e389;
 }
 *{box-sizing:border-box}
@@ -53,6 +54,13 @@ ins{background:var(--ins-bg);text-decoration:none;border-radius:3px;}
 del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 .result ins,.result del{scroll-margin-top:100px;}
 #resultWrap.vcompact .result{max-height:50vh; overflow:auto;}
+
+/* Кнопка экспорта */
+#exportRow{display:flex;justify-content:flex-start;margin:18px 0 6px;}
+#exportWordBtn{
+  display:inline-block;padding:8px 16px;font-weight:600;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(135deg,#e7f3ff,#d6e9ff);color:#004a9f;cursor:pointer;transition:.2s;line-height:1;
+}
 
 /* Блок логирования: кнопка вынесена НАД блоком лога */
 #logToggleRow{display:flex;justify-content:center;margin:18px 0 6px;}
@@ -134,9 +142,14 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
         <button id="resultCompactBtn" class="small">Сжать по высоте</button>
       </div>
       <div id="status">—</div>
-      <div class="legend">Легенда: <del>удалено</del>, <ins>изменено</ins></div>
+      <div class="legend">Легенда: <del>удалено</del>, <ins>добавлено</ins></div>
     </div>
     <div id="out" class="result"></div>
+  </div>
+
+  <!-- Кнопка экспорта в Word -->
+  <div id="exportRow">
+    <button id="exportWordBtn">Экспортировать в Word</button>
   </div>
 
   <!-- Вынесенная кнопка логирования, по центру над логом -->
@@ -189,10 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const logToggleBtn=$('#logToggleBtn');
   const logCompactBtn=$('#logCompactBtn'), clearLogBtn=$('#clearLog');
 
+  const exportWordBtn = $('#exportWordBtn');
+
   let lastRender={htmlAll:'',htmlOnly:'',fragments:0}, onlyChangesMode=false;
   let loggingEnabled=true, diffPositions=[], diffIndex=0;
   let resultCompact=false;  // 50vh
   let logCompact=false;     // 33vh
+
+  // Инициализация diff-match-patch
+  const dmp = new diff_match_patch();
 
   function updateCount(){
     countLeft.textContent='Символов: '+left.value.length;
@@ -276,38 +294,50 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#clearAllBtn').onclick=()=>{left.value='';right.value='';out.innerHTML='';statusEl.textContent='—';updateCount();onlyChangesMode=false;updateNavPanel();};
   $('#swapBtn').onclick=()=>{const t=left.value;left.value=right.value;right.value=t;updateCount();};
 
-  function tok(s){return s.match(/(\s+|[\wА-Яа-яЁё]+|[^\s\wА-Яа-яЁё])/gmu)||[];}
-  function lcs(a,b){
-    const n=a.length,m=b.length,d=Array(n+1).fill().map(()=>Array(m+1).fill(0));
-    for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i][j]=(a[i]===b[j])?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
-    let i=0,j=0,s=[];
-    while(i<n&&j<m){
-      if(a[i]===b[j]){s.push({op:'eq',v:a[i++]});j++;}
-      else if(d[i+1][j]>=d[i][j+1]){s.push({op:'del',v:a[i++]});}
-      else{s.push({op:'ins',v:b[j++]});}
-    }
-    while(i<n)s.push({op:'del',v:a[i++]});
-    while(j<m)s.push({op:'ins',v:b[j++]});
-    return s;
+  // Используем diff-match-patch для сравнения
+  function compareTexts(text1, text2) {
+    // diff_match_patch возвращает массив кортежей [операция, текст]
+    // -1 = удаление, 1 = вставка, 0 = без изменений
+    const diff = dmp.diff_main(text1, text2);
+    
+    // Оптимизируем diff для лучшей читаемости
+    dmp.diff_cleanupSemantic(diff);
+    
+    return diff;
   }
-  function merge(s){
-    if(!s.length)return[];
-    let r=[],c={op:s[0].op,v:s[0].v};
-    for(let k=1;k<s.length;k++){
-      if(s[k].op===c.op)c.v+=s[k].v; else {r.push(c); c={op:s[k].op,v:s[k].v};}
-    }
-    r.push(c); return r;
-  }
+
   const esc=s=>s.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
 
-  function makeViews(scr){
-    const m=merge(scr); let f=0, a=[], o=[];
-    m.forEach(x=>{
-      if(x.op==='eq'){ a.push(esc(x.v)); }
-      else if(x.op==='del'){ f++; const h='<del>'+esc(x.v)+'</del>'; a.push(h); o.push(h); }
-      else { f++; const h='<ins>'+esc(x.v)+'</ins>'; a.push(h); o.push(h); }
+  function makeViews(diff) {
+    let fragments = 0;
+    const allParts = [];
+    const onlyChangesParts = [];
+    
+    diff.forEach(([operation, text]) => {
+      const escapedText = esc(text);
+      
+      switch (operation) {
+        case -1: // Удаление
+          fragments++;
+          allParts.push(`<del>${escapedText}</del>`);
+          onlyChangesParts.push(`<del>${escapedText}</del>`);
+          break;
+        case 1: // Вставка
+          fragments++;
+          allParts.push(`<ins>${escapedText}</ins>`);
+          onlyChangesParts.push(`<ins>${escapedText}</ins>`);
+          break;
+        case 0: // Без изменений
+          allParts.push(escapedText);
+          break;
+      }
     });
-    return {htmlAll:a.join(''), htmlOnly:o.join('').replace(/\s{2,}/g,' '), fragments:f};
+    
+    return {
+      htmlAll: allParts.join(''),
+      htmlOnly: onlyChangesParts.join(''),
+      fragments: fragments
+    };
   }
 
   function indexChanges(){
@@ -396,7 +426,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!a&&!b){
       statusEl.textContent='—'; out.innerHTML=''; updateNavPanel(); return;
     }
-    const s=lcs(tok(a),tok(b)), v=makeViews(s); lastRender=v;
+    
+    // Используем diff-match-patch для сравнения
+    const diff = compareTexts(a, b);
+    const v = makeViews(diff);
+    lastRender = v;
+    
     if(a===b){
       statusEl.textContent='Тексты совпадают.'; out.innerHTML=v.htmlAll;
     }else{
@@ -407,6 +442,53 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavPanel(); saveState();
   }
   $('#compareBtn').onclick=()=>compare(false);
+
+  // Функция экспорта в Word
+  function exportToWord() {
+    const content = onlyChangesMode ? lastRender.htmlOnly : lastRender.htmlAll;
+    
+    // Создаем HTML-документ с правильным форматированием для Word
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.4; }
+          del { color: #cc0000; text-decoration: line-through; background-color: #ffd8d8; }
+          ins { color: #006600; text-decoration: none; background-color: #d8ffd8; }
+          .legend { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+        </style>
+      </head>
+      <body>
+        <h1>Результат сравнения текстов</h1>
+        <div class="legend">
+          <strong>Легенда:</strong> 
+          <del>удаленный текст</del>, 
+          <ins>добавленный текст</ins>
+        </div>
+        <div>${content}</div>
+        <div style="margin-top: 30px; font-size: 12px; color: #666;">
+          Сгенерировано ${new Date().toLocaleString()}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Создаем Blob и скачиваем
+    const blob = new Blob([htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'comparison_result.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Назначаем обработчик для кнопки экспорта
+  exportWordBtn.onclick = exportToWord;
 
   toggleBtn.onclick=()=>{
     onlyChangesMode=!onlyChangesMode;
