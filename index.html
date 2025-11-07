@@ -111,7 +111,8 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
       <div class="btns">
         <button data-paste="left" class="small">Вставить</button>
         <button data-clear="left" class="small">Очистить</button>
-        <input type="file" class="file" id="fileLeft" accept=".txt,.docx,.xlsx,.pptx,.pdf" hidden>
+        <input type="file" class="file" id="fileLeft" 
+accept=".txt,.html,.htm,.css,.scss,.less,.js,.ts,.jsx,.tsx,.json,.xml,.xsd,.yaml,.yml,.php,.py,.rb,.pl,.sh,.bat,.cmd,.ps1,.ini,.cfg,.conf,.env,.properties,.toml,.rc,.log,.md,.markdown,.rst,.csv,.tsv,.jsonl,.ndjson,.sql,.vrt,.lst,.tex,.docx,.xlsx,.pptx,.pdf" hidden>
         <button data-load="left" class="small">Загрузить</button>
       </div>
     </div>
@@ -122,7 +123,8 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
       <div class="btns">
         <button data-paste="right" class="small">Вставить</button>
         <button data-clear="right" class="small">Очистить</button>
-        <input type="file" class="file" id="fileRight" accept=".txt,.docx,.xlsx,.pptx,.pdf" hidden>
+       <input type="file" class="file" id="fileRight" 
+accept=".txt,.html,.htm,.css,.scss,.less,.js,.ts,.jsx,.tsx,.json,.xml,.xsd,.yaml,.yml,.php,.py,.rb,.pl,.sh,.bat,.cmd,.ps1,.ini,.cfg,.conf,.env,.properties,.toml,.rc,.log,.md,.markdown,.rst,.csv,.tsv,.jsonl,.ndjson,.sql,.vrt,.lst,.tex,.docx,.xlsx,.pptx,.pdf" hidden>
         <button data-load="right" class="small">Загрузить</button>
       </div>
     </div>
@@ -244,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     t.addEventListener('dragleave',()=>{t.style.background='#fff';});
     t.addEventListener('drop',async e=>{
       e.preventDefault();t.style.background='#fff';
-      const f=e.dataTransfer.files[0]; if(f) await readFile({target:{files:[f]}},t);
+      const f=e.dataTransfer.files[0]; if(f) await readFile({target:{files:[f]}},t); 
     });
   });
 
@@ -271,32 +273,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return txt.trim();
   }
-  async function readFile(e,target){
-    const f=e.target.files[0]; if(!f) return;
-    const ext=f.name.split('.').pop().toLowerCase();
-    try{
-      if(ext==='txt'){
-        target.value=await f.text();
-      }else if(ext==='docx'){
-        const buf=await f.arrayBuffer();
-        const r=await mammoth.extractRawText({arrayBuffer:buf});
-        target.value=r.value;
-      }else if(ext==='xlsx'){
-        const data=await f.arrayBuffer();
-        const wb=XLSX.read(data,{type:'array'});
-        let txt=''; wb.SheetNames.forEach(n=>{txt+=XLSX.utils.sheet_to_csv(wb.Sheets[n])+'\n';});
-        target.value=txt;
-      }else if(ext==='pptx'){
-        target.value=await extractPptxText(f);
-      }else if(ext==='pdf'){
-        target.value=await extractPdfText(f);
-      }else{
-        alert('Поддерживаются TXT, DOCX, XLSX, PPTX, PDF.');
-      }
-    }finally{
-      updateCount(); saveState();
+
+
+  
+
+
+
+
+  async function readFile(e, target) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const ext = f.name.split('.').pop().toLowerCase();
+  try {
+    if ([
+      'txt','html','htm','css','scss','less','js','ts','jsx','tsx',
+      'json','xml','xsd','yaml','yml','php','py','rb','pl','sh','bat','cmd','ps1',
+      'ini','cfg','conf','env','properties','toml','rc','log',
+      'md','markdown','rst','csv','tsv','jsonl','ndjson','sql','vrt','lst','tex'
+    ].includes(ext)) {
+      target.value = await f.text();
+    } else if (ext === 'docx') {
+      const buf = await f.arrayBuffer();
+      const r = await mammoth.extractRawText({ arrayBuffer: buf });
+      target.value = r.value;
+    } else if (ext === 'xlsx') {
+      const data = await f.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      let txt = '';
+      wb.SheetNames.forEach(n => { txt += XLSX.utils.sheet_to_csv(wb.Sheets[n]) + '\n'; });
+      target.value = txt;
+    } else if (ext === 'pptx') {
+      target.value = await extractPptxText(f);
+    } else if (ext === 'pdf') {
+      target.value = await extractPdfText(f);
+    } else {
+      alert('Поддерживаются текстовые форматы и DOCX, XLSX, PPTX, PDF.');
     }
+  } finally {
+    updateCount();
+    saveState();
   }
+}
+
+
+
+
+
+
+  
 
   document.querySelectorAll('[data-paste]').forEach(b=>b.onclick=async()=>{
     try{
