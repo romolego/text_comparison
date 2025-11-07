@@ -11,6 +11,8 @@
 <script src="./jszip.min.js"></script>
 <script src="./pdf.min.js"></script>
 <script src="./pdf.worker.min.js"></script>
+<!-- Diff-Match-Patch (подключаем ровно одну библиотеку) -->
+<script src="./diff_mat2.js"></script>
 
 <style>
 :root{
@@ -47,7 +49,7 @@ button:hover{filter:brightness(0.95);}
 #resultToolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;gap:8px;padding:6px 0;}
 #rt-left{justify-self:start;display:flex;gap:8px;flex-wrap:wrap;}
 #status{justify-self:center;font-weight:600;}
-.legend{justify-self:end;font-size:13px;color:var(--muted);padding-right:10px;}
+.legend{justify-self=end;font-size:13px;color:var(--muted);padding-right:10px;}
 .result{border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff;min-height:80px;white-space:pre-wrap;word-wrap:break-word;}
 ins{background:var(--ins-bg);text-decoration:none;border-radius:3px;}
 del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
@@ -183,73 +185,25 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 </div>
 
 <script>
-// Простая и эффективная функция для сравнения текстов
+// Семантический дифф на базе Diff-Match-Patch (diff_mat2.js)
 function diffStrings(text1, text2) {
-    const result = [];
-    let i = 0, j = 0;
-    const len1 = text1.length, len2 = text2.length;
-    
-    while (i < len1 && j < len2) {
-        if (text1[i] === text2[j]) {
-            // Совпадающие символы
-            let k = 1;
-            while (i + k < len1 && j + k < len2 && text1[i + k] === text2[j + k]) {
-                k++;
-            }
-            result.push({ type: 'equal', value: text1.substring(i, i + k) });
-            i += k;
-            j += k;
-        } else {
-            // Найдено различие
-            let deleteLength = 0;
-            let insertLength = 0;
-            
-            // Ищем, где снова совпадут строки
-            for (let searchLen = 1; searchLen <= 100; searchLen++) {
-                if (i + searchLen < len1 && text1[i + searchLen] === text2[j]) {
-                    deleteLength = searchLen;
-                    break;
-                }
-                if (j + searchLen < len2 && text1[i] === text2[j + searchLen]) {
-                    insertLength = searchLen;
-                    break;
-                }
-                if (i + searchLen < len1 && j + searchLen < len2 && 
-                    text1[i + searchLen] === text2[j + searchLen]) {
-                    deleteLength = searchLen;
-                    insertLength = searchLen;
-                    break;
-                }
-            }
-            
-            if (deleteLength > 0 || insertLength > 0) {
-                if (deleteLength > 0) {
-                    result.push({ type: 'delete', value: text1.substring(i, i + deleteLength) });
-                    i += deleteLength;
-                }
-                if (insertLength > 0) {
-                    result.push({ type: 'insert', value: text2.substring(j, j + insertLength) });
-                    j += insertLength;
-                }
-            } else {
-                // Если не нашли совпадений, обрабатываем по одному символу
-                result.push({ type: 'delete', value: text1[i] });
-                result.push({ type: 'insert', value: text2[j] });
-                i++;
-                j++;
-            }
-        }
-    }
-    
-    // Добавляем оставшиеся символы
-    if (i < len1) {
-        result.push({ type: 'delete', value: text1.substring(i) });
-    }
-    if (j < len2) {
-        result.push({ type: 'insert', value: text2.substring(j) });
-    }
-    
-    return result;
+  const dmp = new diff_match_patch();
+  dmp.Diff_Timeout  = 3; // сек.; 0 = без лимита
+  dmp.Diff_EditCost = 4;
+
+  let diffs = dmp.diff_main(text1, text2);
+  dmp.diff_cleanupSemantic(diffs);
+
+  const result = [];
+  for (let i = 0; i < diffs.length; i++) {
+    const op = diffs[i][0];
+    const val = diffs[i][1];
+    if (!val) continue;
+    if (op === 0)      result.push({ type: 'equal',  value: val });
+    else if (op === -1) result.push({ type: 'delete', value: val });
+    else if (op === 1)  result.push({ type: 'insert', value: val });
+  }
+  return result;
 }
 
 // Основной код приложения
@@ -366,8 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let fragments = 0;
     const allParts = [];
     const onlyChangesParts = [];
-    
-    // Объединяем последовательные изменения одного типа
+
     const mergedResult = [];
     if (diffResult.length > 0) {
         let current = {...diffResult[0]};
@@ -381,31 +334,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         mergedResult.push(current);
     }
-    
+
     mergedResult.forEach(item => {
         const escapedText = esc(item.value);
-        
         switch (item.type) {
-            case 'equal':
-                allParts.push(escapedText);
-                break;
-            case 'delete':
-                fragments++;
-                allParts.push(`<del>${escapedText}</del>`);
-                onlyChangesParts.push(`<del>${escapedText}</del>`);
-                break;
-            case 'insert':
-                fragments++;
-                allParts.push(`<ins>${escapedText}</ins>`);
-                onlyChangesParts.push(`<ins>${escapedText}</ins>`);
-                break;
+          case 'equal':
+            allParts.push(escapedText);
+            break;
+          case 'delete':
+            fragments++;
+            allParts.push(`<del>${escapedText}</del>`);
+            onlyChangesParts.push(`<del>${escapedText}</del>`);
+            break;
+          case 'insert':
+            fragments++;
+            allParts.push(`<ins>${escapedText}</ins>`);
+            onlyChangesParts.push(`<ins>${escapedText}</ins>`);
+            break;
         }
     });
-    
+
     return {
-        htmlAll: allParts.join(''),
-        htmlOnly: onlyChangesParts.join(''),
-        fragments: fragments
+      htmlAll: allParts.join(''),
+      htmlOnly: onlyChangesParts.join(''),
+      fragments: fragments
     };
   }
 
@@ -453,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function renderLog(){
     if(!loggingEnabled){
-      logWrap.classList.add('hidden');               // полностью скрыть блок лога
+      logWrap.classList.add('hidden');
       logToggleBtn.textContent='Вести лог';
       logToggleBtn.classList.add('off');
       return;
@@ -495,51 +447,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!a&&!b){
       statusEl.textContent='—'; out.innerHTML=''; updateNavPanel(); return;
     }
-    
+
     try {
-        // Показываем статус "Сравнивается..."
-        statusEl.textContent = 'Сравнивается...';
-        
-        // Даем браузеру обновить интерфейс
-        setTimeout(() => {
-            try {
-                const diffResult = diffStrings(a, b);
-                const v = makeViews(diffResult);
-                lastRender = v;
-                
-                if(a === b){
-                    statusEl.textContent='Тексты совпадают.'; 
-                    out.innerHTML=v.htmlAll;
-                } else {
-                    statusEl.textContent=`Различий: ${v.fragments}`;
-                    out.innerHTML=onlyChangesMode? v.htmlOnly : v.htmlAll;
-                    if(loggingEnabled && !skipLog) addToLog(a,b,v.fragments);
-                }
-                updateNavPanel(); 
-                saveState();
-            } catch (error) {
-                statusEl.textContent = 'Ошибка при сравнении';
-                console.error('Comparison error:', error);
-            }
-        }, 10);
+      statusEl.textContent = 'Сравнивается...';
+      setTimeout(() => {
+        try {
+          const diffResult = diffStrings(a, b);
+          const v = makeViews(diffResult);
+          lastRender = v;
+
+          if(a === b){
+            statusEl.textContent='Тексты совпадают.';
+            out.innerHTML=v.htmlAll;
+          } else {
+            statusEl.textContent=`Различий: ${v.fragments}`;
+            out.innerHTML=onlyChangesMode? v.htmlOnly : v.htmlAll;
+            if(loggingEnabled && !skipLog) addToLog(a,b,v.fragments);
+          }
+          updateNavPanel();
+          saveState();
+        } catch (error) {
+          statusEl.textContent = 'Ошибка при сравнении';
+          console.error('Comparison error:', error);
+        }
+      }, 10);
     } catch (error) {
-        statusEl.textContent = 'Ошибка при сравнении';
-        console.error('Comparison error:', error);
+      statusEl.textContent = 'Ошибка при сравнении';
+      console.error('Comparison error:', error);
     }
   }
-  
+
   $('#compareBtn').onclick=()=>compare(false);
 
-  // Функция экспорта в Word
   function exportToWord() {
     if (!lastRender || !lastRender.htmlAll) {
       alert('Сначала выполните сравнение текстов');
       return;
     }
-    
     const content = onlyChangesMode ? lastRender.htmlOnly : lastRender.htmlAll;
-    
-    // Создаем HTML-документ с правильным форматированием для Word
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -555,8 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <body>
         <h1>Результат сравнения текстов</h1>
         <div class="legend">
-          <strong>Легенда:</strong> 
-          <del>удаленный текст</del>, 
+          <strong>Легенда:</strong>
+          <del>удаленный текст</del>,
           <ins>добавленный текст</ins>
         </div>
         <div>${content}</div>
@@ -566,8 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
       </body>
       </html>
     `;
-    
-    // Создаем Blob и скачиваем
     const blob = new Blob([htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -578,8 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-
-  // Назначаем обработчик для кнопки экспорта
   exportWordBtn.onclick = exportToWord;
 
   toggleBtn.onclick=()=>{
@@ -619,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleBtn.textContent=onlyChangesMode?'Показать всё':'Показать только исправленное';
     }
     const s=localStorage.getItem('diffLogging'); if(s!==null) loggingEnabled=(s==='true');
-    renderLog();                        // покажем/скроем блок лога и проставим текст кнопки
+    renderLog();
     resultCompactBtn.textContent=resultCompact?'Развернуть полностью':'Сжать по высоте';
     logCompactBtn.textContent=logCompact?'Развернуть полностью':'Сжать по высоте';
     updateCount();
