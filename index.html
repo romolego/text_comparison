@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ð¡Ñ€Ð°Ð²Ð½ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑÑ‚Ð¾Ð² (TXT, DOCX, XLSX, PPTX, PDF)</title>
+<title>Сравнение текстов (TXT, DOCX, XLSX, PPTX, PDF)</title>
 
-<!-- Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ðµ Ð±Ð¸Ð±Ð»Ð¸Ð¾Ñ‚ÐµÐºÐ¸ -->
+<!-- Локальные библиотеки -->
 <script src="./mammoth.browser.min.js"></script>
 <script src="./xlsx.full.min.js"></script>
 <script src="./jszip.min.js"></script>
 <script src="./pdf.min.js"></script>
 <script src="./pdf.worker.min.js"></script>
-<!-- Diff-Match-Patch (Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ Ñ€Ð¾Ð²Ð½Ð¾ Ð¾Ð´Ð½Ñƒ Ð±Ð¸Ð±Ð»Ð¸Ð¾Ñ‚ÐµÐºÑƒ) -->
+<!-- Diff-Match-Patch (подключаем ровно одну библиотеку) -->
 <script src="./diff_mat2.js"></script>
 
 <style>
@@ -38,13 +38,13 @@ button.big{padding:16px 24px;font-weight:700;font-size:18px;}
 button.small{font-size:13px;padding:5px 8px;}
 button:hover{filter:brightness(0.95);}
 
-/* ÐŸÐ¾Ð´ Ð¾ÑÐ½Ð¾Ð²Ð½Ñ‹Ð¼Ð¸ Ð¿Ð¾Ð»ÑÐ¼Ð¸ */
+/* Под основными полями */
 .action-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:28px 0;}
 .action-center{grid-column:2;justify-self:center;}
 .action-right{grid-column:3;justify-self:end;display:flex;gap:8px;}
 #compareBtn{margin-top:12px;margin-bottom:12px;}
 
-/* Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ */
+/* Результат */
 #resultWrap{position:relative;margin-top:8px;}
 #resultToolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;gap:8px;padding:6px 0;}
 #rt-left{justify-self:start;display:flex;gap:8px;flex-wrap:wrap;}
@@ -56,14 +56,14 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 .result ins,.result del{scroll-margin-top:100px;}
 #resultWrap.vcompact .result{max-height:50vh; overflow:auto;}
 
-/* ÐšÐ½Ð¾Ð¿ÐºÐ° ÑÐºÑÐ¿Ð¾Ñ€Ñ‚Ð° */
+/* Кнопка экспорта */
 #exportRow{display:flex;justify-content:flex-start;margin:18px 0 6px;}
 #exportWordBtn{
   display:inline-block;padding:8px 16px;font-weight:600;border-radius:10px;border:1px solid var(--border);
   background:linear-gradient(135deg,#e7f3ff,#d6e9ff);color:#004a9f;cursor:pointer;transition:.2s;line-height:1;
 }
 
-/* Ð‘Ð»Ð¾Ðº Ð»Ð¾Ð³Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ: ÐºÐ½Ð¾Ð¿ÐºÐ° Ð²Ñ‹Ð½ÐµÑÐµÐ½Ð° ÐÐÐ” Ð±Ð»Ð¾ÐºÐ¾Ð¼ Ð»Ð¾Ð³Ð° */
+/* Блок логирования: кнопка вынесена НАД блоком лога */
 #logToggleRow{display:flex;justify-content:center;margin:18px 0 6px;}
 #logToggleBtn{
   display:inline-block;padding:8px 16px;font-weight:600;border-radius:10px;border:1px solid var(--border);
@@ -72,14 +72,14 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 #logToggleBtn.off{background:linear-gradient(135deg,#fbe4e4,#ffe9e9);color:#a40000;}
 #logToggleBtn:hover{filter:brightness(0.95);}
 
-/* Ð¡Ð°Ð¼ Ð±Ð»Ð¾Ðº Ð»Ð¾Ð³Ð° */
+/* Сам блок лога */
 #logWrap{position:relative;margin-top:6px;}
 #logToolbar{display:flex;justify-content:space-between;align-items:center;margin:6px 0 8px;gap:8px;flex-wrap:wrap;}
 #logLeft{display:flex;align-items:center;gap:10px;}
 #logModeBtns{display:flex;gap:6px;}
 #logSection{border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;}
 #logSection.hidden{display:none;}
-#logWrap.hidden{display:none;} /* Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ ÑÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ Ð»Ð¾Ð³ Ð¿Ñ€Ð¸ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸ */
+#logWrap.hidden{display:none;} /* полностью скрываем лог при отключении */
 
 .logEntry{border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:6px 0;background:#fafafa;display:flex;align-items:flex-start;gap:8px;}
 .logMain{flex:1 1 auto;min-width:0;}
@@ -91,7 +91,7 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 .iconDelete{background:#ffe9e9;border-color:#ffc7c7;color:#a80000;}
 #logWrap.vcompact #logSection{max-height:33vh; overflow:auto;}
 
-/* ÐÐ°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ */
+/* Навигация */
 #navPanel{position:fixed;right:15px;top:40%;display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:10px;background:rgba(250,250,250,0.9);box-shadow:0 0 6px rgba(0,0,0,0.15);z-index:999;transition:opacity .3s;}
 #navPanel.hidden{opacity:0;pointer-events:none;}
 .navBtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.2s;}
@@ -101,72 +101,72 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
 </head>
 <body>
 <div class="wrap">
-  <h1>Ð¡Ñ€Ð°Ð²Ð½ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑÑ‚Ð¾Ð² (TXT, DOCX, XLSX, PPTX, PDF)</h1>
+  <h1>Сравнение текстов (TXT, DOCX, XLSX, PPTX, PDF)</h1>
 
   <div class="row">
     <div class="col">
-      <label>ÐŸÐµÑ€Ð²Ñ‹Ð¹ Ñ‚ÐµÐºÑÑ‚ (Ð´Ð¾)</label>
-      <textarea id="left" placeholder="Ð’ÑÑ‚Ð°Ð²ÑŒÑ‚Ðµ Ð¸ÑÑ…Ð¾Ð´Ð½Ñ‹Ð¹ Ñ‚ÐµÐºÑÑ‚â€¦"></textarea>
-      <div class="count" id="countLeft">Ð¡Ð¸Ð¼Ð²Ð¾Ð»Ð¾Ð²: 0</div>
+      <label>Первый текст (до)</label>
+      <textarea id="left" placeholder="Вставьте исходный текст…"></textarea>
+      <div class="count" id="countLeft">Символов: 0</div>
       <div class="btns">
-        <button data-paste="left" class="small">Ð’ÑÑ‚Ð°Ð²Ð¸Ñ‚ÑŒ</button>
-        <button data-clear="left" class="small">ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ</button>
+        <button data-paste="left" class="small">Вставить</button>
+        <button data-clear="left" class="small">Очистить</button>
         <input type="file" class="file" id="fileLeft" accept=".txt,.docx,.xlsx,.pptx,.pdf" hidden>
-        <button data-load="left" class="small">Ð—Ð°Ð³Ñ€ÑƒÐ·Ð¸Ñ‚ÑŒ</button>
+        <button data-load="left" class="small">Загрузить</button>
       </div>
     </div>
     <div class="col">
-      <label>Ð’Ñ‚Ð¾Ñ€Ð¾Ð¹ Ñ‚ÐµÐºÑÑ‚ (Ð¿Ð¾ÑÐ»Ðµ)</label>
-      <textarea id="right" placeholder="Ð’ÑÑ‚Ð°Ð²ÑŒÑ‚Ðµ Ð¸Ð·Ð¼ÐµÐ½Ñ‘Ð½Ð½Ñ‹Ð¹ Ñ‚ÐµÐºÑÑ‚â€¦"></textarea>
-      <div class="count" id="countRight">Ð¡Ð¸Ð¼Ð²Ð¾Ð»Ð¾Ð²: 0</div>
+      <label>Второй текст (после)</label>
+      <textarea id="right" placeholder="Вставьте изменённый текст…"></textarea>
+      <div class="count" id="countRight">Символов: 0</div>
       <div class="btns">
-        <button data-paste="right" class="small">Ð’ÑÑ‚Ð°Ð²Ð¸Ñ‚ÑŒ</button>
-        <button data-clear="right" class="small">ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ</button>
+        <button data-paste="right" class="small">Вставить</button>
+        <button data-clear="right" class="small">Очистить</button>
         <input type="file" class="file" id="fileRight" accept=".txt,.docx,.xlsx,.pptx,.pdf" hidden>
-        <button data-load="right" class="small">Ð—Ð°Ð³Ñ€ÑƒÐ·Ð¸Ñ‚ÑŒ</button>
+        <button data-load="right" class="small">Загрузить</button>
       </div>
     </div>
   </div>
 
   <div class="action-row">
-    <div class="action-center"><button id="compareBtn" class="primary big">Ð¡Ñ€Ð°Ð²Ð½Ð¸Ñ‚ÑŒ</button></div>
+    <div class="action-center"><button id="compareBtn" class="primary big">Сравнить</button></div>
     <div class="action-right">
-      <button id="swapBtn" class="small">ÐŸÐ¾Ð¼ÐµÐ½ÑÑ‚ÑŒ Ð¼ÐµÑÑ‚Ð°Ð¼Ð¸</button>
-      <button id="clearAllBtn" class="small">ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ Ð²ÑÑ‘</button>
+      <button id="swapBtn" class="small">Поменять местами</button>
+      <button id="clearAllBtn" class="small">Очистить всё</button>
     </div>
   </div>
 
   <div id="resultWrap">
     <div id="resultToolbar">
       <div id="rt-left">
-        <button id="toggleViewBtn" class="small">ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð½Ð¾Ðµ</button>
-        <button id="resultCompactBtn" class="small">Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ</button>
+        <button id="toggleViewBtn" class="small">Показать только исправленное</button>
+        <button id="resultCompactBtn" class="small">Сжать по высоте</button>
       </div>
-      <div id="status">â€”</div>
-      <div class="legend">Ð›ÐµÐ³ÐµÐ½Ð´Ð°: <del>ÑƒÐ´Ð°Ð»ÐµÐ½Ð¾</del>, <ins>Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¾</ins></div>
+      <div id="status">—</div>
+      <div class="legend">Легенда: <del>удалено</del>, <ins>добавлено</ins></div>
     </div>
     <div id="out" class="result"></div>
   </div>
 
-  <!-- ÐšÐ½Ð¾Ð¿ÐºÐ° ÑÐºÑÐ¿Ð¾Ñ€Ñ‚Ð° Ð² Word -->
+  <!-- Кнопка экспорта в Word -->
   <div id="exportRow">
-    <button id="exportWordBtn">Ð­ÐºÑÐ¿Ð¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Word</button>
+    <button id="exportWordBtn">Экспортировать в Word</button>
   </div>
 
-  <!-- Ð’Ñ‹Ð½ÐµÑÐµÐ½Ð½Ð°Ñ ÐºÐ½Ð¾Ð¿ÐºÐ° Ð»Ð¾Ð³Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ, Ð¿Ð¾ Ñ†ÐµÐ½Ñ‚Ñ€Ñƒ Ð½Ð°Ð´ Ð»Ð¾Ð³Ð¾Ð¼ -->
+  <!-- Вынесенная кнопка логирования, по центру над логом -->
   <div id="logToggleRow">
-    <button id="logToggleBtn">ÐÐµ Ð²ÐµÑÑ‚Ð¸ Ð»Ð¾Ð³</button>
+    <button id="logToggleBtn">Не вести лог</button>
   </div>
 
-  <!-- Ð‘Ð»Ð¾Ðº Ð»Ð¾Ð³Ð° (Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ ÑÐºÑ€Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸) -->
+  <!-- Блок лога (полностью скрывается при отключении) -->
   <div id="logWrap">
     <div id="logToolbar">
       <div id="logLeft">
-        <h3 style="margin:0;">Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ Ð»Ð¾Ð³ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸Ð¹</h3>
+        <h3 style="margin:0;">Локальный лог сравнений</h3>
       </div>
       <div id="logModeBtns">
-        <button id="logCompactBtn" class="small">Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ</button>
-        <button id="clearLog" class="small">ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ Ð»Ð¾Ð³</button>
+        <button id="logCompactBtn" class="small">Сжать по высоте</button>
+        <button id="clearLog" class="small">Очистить лог</button>
       </div>
     </div>
     <div id="logSection" class="hidden">
@@ -175,20 +175,20 @@ del{background:var(--del-bg);text-decoration:line-through;border-radius:3px;}
   </div>
 </div>
 
-<!-- ÐŸÐ°Ð½ÐµÐ»ÑŒ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ð¸ -->
+<!-- Панель навигации -->
 <div id="navPanel" class="hidden">
-  <button class="navBtn" id="navTop" title="ÐŸÑ€Ð¾ÐºÑ€ÑƒÑ‚Ð¸Ñ‚ÑŒ Ð²Ð²ÐµÑ€Ñ… ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹">â†‘</button>
-  <button class="navBtn" id="navBottom" title="ÐŸÑ€Ð¾ÐºÑ€ÑƒÑ‚Ð¸Ñ‚ÑŒ Ð²Ð½Ð¸Ð· ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹">â†“</button>
+  <button class="navBtn" id="navTop" title="Прокрутить вверх страницы">↑</button>
+  <button class="navBtn" id="navBottom" title="Прокрутить вниз страницы">↓</button>
   <div class="divider"></div>
-  <button class="navBtn" id="navPrev" title="ÐŸÑ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰ÐµÐµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ðµ">â†</button>
-  <button class="navBtn" id="navNext" title="Ð¡Ð»ÐµÐ´ÑƒÑŽÑ‰ÐµÐµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ðµ">â†’</button>
+  <button class="navBtn" id="navPrev" title="Предыдущее изменение">←</button>
+  <button class="navBtn" id="navNext" title="Следующее изменение">→</button>
 </div>
 
 <script>
-// Ð¡ÐµÐ¼Ð°Ð½Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ Ð´Ð¸Ñ„Ñ„ Ð½Ð° Ð±Ð°Ð·Ðµ Diff-Match-Patch (diff_mat2.js)
+// Семантический дифф на базе Diff-Match-Patch (diff_mat2.js)
 function diffStrings(text1, text2) {
   const dmp = new diff_match_patch();
-  dmp.Diff_Timeout  = 3; // ÑÐµÐº.; 0 = Ð±ÐµÐ· Ð»Ð¸Ð¼Ð¸Ñ‚Ð°
+  dmp.Diff_Timeout  = 3; // сек.; 0 = без лимита
   dmp.Diff_EditCost = 4;
 
   let diffs = dmp.diff_main(text1, text2);
@@ -206,7 +206,7 @@ function diffStrings(text1, text2) {
   return result;
 }
 
-// ÐžÑÐ½Ð¾Ð²Ð½Ð¾Ð¹ ÐºÐ¾Ð´ Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ
+// Основной код приложения
 document.addEventListener('DOMContentLoaded', () => {
   if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.min.js';
@@ -233,8 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let logCompact=false;     // 33vh
 
   function updateCount(){
-    countLeft.textContent='Ð¡Ð¸Ð¼Ð²Ð¾Ð»Ð¾Ð²: '+left.value.length;
-    countRight.textContent='Ð¡Ð¸Ð¼Ð²Ð¾Ð»Ð¾Ð²: '+right.value.length;
+    countLeft.textContent='Символов: '+left.value.length;
+    countRight.textContent='Символов: '+right.value.length;
     saveState();
   }
   [left,right].forEach(t=>t.addEventListener('input',updateCount));
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }else if(ext==='pdf'){
         target.value=await extractPdfText(f);
       }else{
-        alert('ÐŸÐ¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°ÑŽÑ‚ÑÑ TXT, DOCX, XLSX, PPTX, PDF.');
+        alert('Поддерживаются TXT, DOCX, XLSX, PPTX, PDF.');
       }
     }finally{
       updateCount(); saveState();
@@ -304,14 +304,14 @@ document.addEventListener('DOMContentLoaded', () => {
       (b.dataset.paste==='left'?left:right).value=txt;
       updateCount();
     }catch{
-      alert('Ð Ð°Ð·Ñ€ÐµÑˆÐ¸Ñ‚Ðµ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð±ÑƒÑ„ÐµÑ€Ñƒ Ð¸Ð»Ð¸ Ð²ÑÑ‚Ð°Ð²ÑŒÑ‚Ðµ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ (Ctrl+V).');
+      alert('Разрешите доступ к буферу или вставьте вручную (Ctrl+V).');
     }
   });
   document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{(b.dataset.clear==='left'?left:right).value='';updateCount();});
   document.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{(b.dataset.load==='left'?$('#fileLeft'):$('#fileRight')).click();});
   $('#fileLeft').onchange=e=>readFile(e,left);
   $('#fileRight').onchange=e=>readFile(e,right);
-  $('#clearAllBtn').onclick=()=>{left.value='';right.value='';out.innerHTML='';statusEl.textContent='â€”';updateCount();onlyChangesMode=false;updateNavPanel();};
+  $('#clearAllBtn').onclick=()=>{left.value='';right.value='';out.innerHTML='';statusEl.textContent='—';updateCount();onlyChangesMode=false;updateNavPanel();};
   $('#swapBtn').onclick=()=>{const t=left.value;left.value=right.value;right.value=t;updateCount();};
 
   const esc=s=>s.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
@@ -406,12 +406,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderLog(){
     if(!loggingEnabled){
       logWrap.classList.add('hidden');
-      logToggleBtn.textContent='Ð’ÐµÑÑ‚Ð¸ Ð»Ð¾Ð³';
+      logToggleBtn.textContent='Вести лог';
       logToggleBtn.classList.add('off');
       return;
     }
     logWrap.classList.remove('hidden');
-    logToggleBtn.textContent='ÐÐµ Ð²ÐµÑÑ‚Ð¸ Ð»Ð¾Ð³';
+    logToggleBtn.textContent='Не вести лог';
     logToggleBtn.classList.remove('off');
 
     const log=JSON.parse(localStorage.getItem('diffLog')||'[]');
@@ -420,11 +420,11 @@ document.addEventListener('DOMContentLoaded', () => {
     log.forEach((x,i)=>{
       const e=document.createElement('div'); e.className='logEntry';
       const main=document.createElement('div'); main.className='logMain';
-      main.innerHTML=`<div class="logMeta"><b>${x.time}</b> â€” Ñ€Ð°Ð·Ð»Ð¸Ñ‡Ð¸Ð¹: ${x.diff}</div>
-                      <div class="logPreview">${esc(x.al)} â€¦ | ${esc(x.ar)} â€¦</div>`;
+      main.innerHTML=`<div class="logMeta"><b>${x.time}</b> — различий: ${x.diff}</div>
+                      <div class="logPreview">${esc(x.al)} … | ${esc(x.ar)} …</div>`;
       const btns=document.createElement('div'); btns.className='logBtns';
-      const bR=document.createElement('button'); bR.className='small iconBtn iconRestore'; bR.textContent='â†©'; bR.title='Ð’Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ'; bR.dataset.act='restore'; bR.dataset.i=i;
-      const bD=document.createElement('button'); bD.className='small iconBtn iconDelete'; bD.textContent='âŒ'; bD.title='Ð£Ð´Ð°Ð»Ð¸Ñ‚ÑŒ'; bD.dataset.act='del'; bD.dataset.i=i;
+      const bR=document.createElement('button'); bR.className='small iconBtn iconRestore'; bR.textContent='↩'; bR.title='Восстановить'; bR.dataset.act='restore'; bR.dataset.i=i;
+      const bD=document.createElement('button'); bD.className='small iconBtn iconDelete'; bD.textContent='❌'; bD.title='Удалить'; bD.dataset.act='del'; bD.dataset.i=i;
       btns.append(bR,bD); e.append(main,btns); logList.append(e);
     });
   }
@@ -440,16 +440,16 @@ document.addEventListener('DOMContentLoaded', () => {
       log.splice(i,1); localStorage.setItem('diffLog',JSON.stringify(log)); renderLog();
     }
   };
-  clearLogBtn.onclick=()=>{ if(confirm('ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ Ð²ÐµÑÑŒ Ð»Ð¾Ð³?')){ localStorage.removeItem('diffLog'); renderLog(); } };
+  clearLogBtn.onclick=()=>{ if(confirm('Очистить весь лог?')){ localStorage.removeItem('diffLog'); renderLog(); } };
 
   function compare(skipLog=false){
     const a=left.value, b=right.value;
     if(!a&&!b){
-      statusEl.textContent='â€”'; out.innerHTML=''; updateNavPanel(); return;
+      statusEl.textContent='—'; out.innerHTML=''; updateNavPanel(); return;
     }
 
     try {
-      statusEl.textContent = 'Ð¡Ñ€Ð°Ð²Ð½Ð¸Ð²Ð°ÐµÑ‚ÑÑ...';
+      statusEl.textContent = 'Сравнивается...';
       setTimeout(() => {
         try {
           const diffResult = diffStrings(a, b);
@@ -457,22 +457,22 @@ document.addEventListener('DOMContentLoaded', () => {
           lastRender = v;
 
           if(a === b){
-            statusEl.textContent='Ð¢ÐµÐºÑÑ‚Ñ‹ ÑÐ¾Ð²Ð¿Ð°Ð´Ð°ÑŽÑ‚.';
+            statusEl.textContent='Тексты совпадают.';
             out.innerHTML=v.htmlAll;
           } else {
-            statusEl.textContent=`Ð Ð°Ð·Ð»Ð¸Ñ‡Ð¸Ð¹: ${v.fragments}`;
+            statusEl.textContent=`Различий: ${v.fragments}`;
             out.innerHTML=onlyChangesMode? v.htmlOnly : v.htmlAll;
             if(loggingEnabled && !skipLog) addToLog(a,b,v.fragments);
           }
           updateNavPanel();
           saveState();
         } catch (error) {
-          statusEl.textContent = 'ÐžÑˆÐ¸Ð±ÐºÐ° Ð¿Ñ€Ð¸ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸Ð¸';
+          statusEl.textContent = 'Ошибка при сравнении';
           console.error('Comparison error:', error);
         }
       }, 10);
     } catch (error) {
-      statusEl.textContent = 'ÐžÑˆÐ¸Ð±ÐºÐ° Ð¿Ñ€Ð¸ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸Ð¸';
+      statusEl.textContent = 'Ошибка при сравнении';
       console.error('Comparison error:', error);
     }
   }
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function exportToWord() {
     if (!lastRender || !lastRender.htmlAll) {
-      alert('Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ð²Ñ‹Ð¿Ð¾Ð»Ð½Ð¸Ñ‚Ðµ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑÑ‚Ð¾Ð²');
+      alert('Сначала выполните сравнение текстов');
       return;
     }
     const content = onlyChangesMode ? lastRender.htmlOnly : lastRender.htmlAll;
@@ -498,15 +498,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </style>
       </head>
       <body>
-        <h1>Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸Ñ Ñ‚ÐµÐºÑÑ‚Ð¾Ð²</h1>
+        <h1>Результат сравнения текстов</h1>
         <div class="legend">
-          <strong>Ð›ÐµÐ³ÐµÐ½Ð´Ð°:</strong>
-          <del>ÑƒÐ´Ð°Ð»ÐµÐ½Ð½Ñ‹Ð¹ Ñ‚ÐµÐºÑÑ‚</del>,
-          <ins>Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð½Ñ‹Ð¹ Ñ‚ÐµÐºÑÑ‚</ins>
+          <strong>Легенда:</strong>
+          <del>удаленный текст</del>,
+          <ins>добавленный текст</ins>
         </div>
         <div>${content}</div>
         <div style="margin-top: 30px; font-size: 12px; color: #666;">
-          Ð¡Ð³ÐµÐ½ÐµÑ€Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¾ ${new Date().toLocaleString()}
+          Сгенерировано ${new Date().toLocaleString()}
         </div>
       </body>
       </html>
@@ -526,19 +526,19 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleBtn.onclick=()=>{
     onlyChangesMode=!onlyChangesMode;
     out.innerHTML=onlyChangesMode? lastRender.htmlOnly : lastRender.htmlAll;
-    toggleBtn.textContent=onlyChangesMode?'ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ð²ÑÑ‘':'ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð½Ð¾Ðµ';
+    toggleBtn.textContent=onlyChangesMode?'Показать всё':'Показать только исправленное';
     updateNavPanel(); saveState();
   };
   resultCompactBtn.onclick=()=>{
     resultCompact=!resultCompact;
     resultWrap.classList.toggle('vcompact', resultCompact);
-    resultCompactBtn.textContent=resultCompact?'Ð Ð°Ð·Ð²ÐµÑ€Ð½ÑƒÑ‚ÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ':'Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ';
+    resultCompactBtn.textContent=resultCompact?'Развернуть полностью':'Сжать по высоте';
     updateNavPanel(); saveState();
   };
   logCompactBtn.onclick=()=>{
     logCompact=!logCompact;
     logWrap.classList.toggle('vcompact', logCompact);
-    logCompactBtn.textContent=logCompact?'Ð Ð°Ð·Ð²ÐµÑ€Ð½ÑƒÑ‚ÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ':'Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ';
+    logCompactBtn.textContent=logCompact?'Развернуть полностью':'Сжать по высоте';
     saveState();
   };
 
@@ -557,12 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
       resultCompact=!!st.resultCompact; logCompact=!!st.logCompact;
       resultWrap.classList.toggle('vcompact', resultCompact);
       logWrap.classList.toggle('vcompact', logCompact);
-      toggleBtn.textContent=onlyChangesMode?'ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ð²ÑÑ‘':'ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð½Ð¾Ðµ';
+      toggleBtn.textContent=onlyChangesMode?'Показать всё':'Показать только исправленное';
     }
     const s=localStorage.getItem('diffLogging'); if(s!==null) loggingEnabled=(s==='true');
     renderLog();
-    resultCompactBtn.textContent=resultCompact?'Ð Ð°Ð·Ð²ÐµÑ€Ð½ÑƒÑ‚ÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ':'Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ';
-    logCompactBtn.textContent=logCompact?'Ð Ð°Ð·Ð²ÐµÑ€Ð½ÑƒÑ‚ÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ':'Ð¡Ð¶Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð²Ñ‹ÑÐ¾Ñ‚Ðµ';
+    resultCompactBtn.textContent=resultCompact?'Развернуть полностью':'Сжать по высоте';
+    logCompactBtn.textContent=logCompact?'Развернуть полностью':'Сжать по высоте';
     updateCount();
   }
 
